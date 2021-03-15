@@ -106,6 +106,19 @@ Now the request will be matched, no matter what the value of `created` is.
 ...
 ```
 
+##### Overriding the matcher methods
+
+```javascript
+urlMatcher: (a, b) => a === b // this will override the tundra matcher to use this custom function
+```
+Other matchers with (a,b) inputs
+
+- urlMatcher
+- headersMatcher
+- methodMatcher
+- bodyMatcher
+- headersToOmit
+
 ### Working Example and More
 The best way to understand this tool is to see is used in context. For a full, working example look at react-native-tundra (coming soon).
 

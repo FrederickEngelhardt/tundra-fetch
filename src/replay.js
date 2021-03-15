@@ -24,21 +24,42 @@ const buildResponseOptions = response => ({
 
 export const matchingFunction = (matchingConfig, request, response) => (_url, _config) => {
   const { url, config } = extractFetchArguments([_url, _config]);
-  const { urlMatcher, headersToOmit } = matchingConfig || {};
+  const {
+    urlMatcher, headersMatcher, methodMatcher, bodyMatcher, headersToOmit,
+  } = matchingConfig || {};
 
   const configHeaders = JSON.stringify(omit(config.headers, headersToOmit));
   const requestHeaders = JSON.stringify(omit(request.headers, headersToOmit));
 
-  let urlMatches = false;
+  let urlMatches = true;
   if (urlMatcher) {
     urlMatches = urlMatcher(request.url, url);
   } else {
     urlMatches = stringIsSimilarTo(removeURLPrefix(request.url), removeURLPrefix(url));
   }
 
-  const bodyMatches = config ? stringIsSimilarTo(request.content, config.body) : true;
-  const headersMatch = config ? stringIsSimilarTo(requestHeaders, configHeaders) : true;
-  const methodMatches = config ? config.method === request.method : true;
+  let bodyMatches = true;
+  if (bodyMatcher && config) {
+    bodyMatches = bodyMatcher(request.content, config.body);
+  } else if (config) {
+    bodyMatches = stringIsSimilarTo(request.content, config.body);
+  }
+
+  let headersMatch = true;
+
+  if (headersMatcher && config) {
+    headersMatch = headersMatcher(requestHeaders, configHeaders);
+  } else if (config) {
+    headersMatch = stringIsSimilarTo(requestHeaders, configHeaders);
+  }
+
+  let methodMatches = true;
+  if (methodMatcher && config) {
+    methodMatches = methodMatcher(config.method, request.method);
+  } else if (config) {
+    methodMatches = config.method === request.method;
+  }
+
 
   const everythingMatches = urlMatches && methodMatches && bodyMatches && headersMatch;
 
