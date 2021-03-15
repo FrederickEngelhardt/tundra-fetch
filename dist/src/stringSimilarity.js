@@ -22,9 +22,9 @@ exports.default = function (source, target) {
   if (!source || (source || '') === (target || '')) {
     return source === target;
   }
-
+  var asteriskEscapedTarget = target && target.replace(new RegExp((0, _lodash2.default)('*'), 'g'), '\\*');
   var wildcardedSource = source.replace(new RegExp((0, _lodash2.default)('*'), 'g'), '\\*').replace(new RegExp((0, _lodash2.default)(WILDCARD_MARKER_ESCAPED), 'g'), '*');
 
-  return _matcher2.default.isMatch(target, wildcardedSource);
+  return _matcher2.default.isMatch(asteriskEscapedTarget, wildcardedSource);
 };
 //# sourceMappingURL=stringSimilarity.js.map

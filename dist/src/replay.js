@@ -72,14 +72,44 @@ var matchingFunction = exports.matchingFunction = function matchingFunction(matc
         url = _extractFetchArgument.url,
         config = _extractFetchArgument.config;
 
-    var headersToOmit = matchingConfig ? matchingConfig.headersToOmit : null;
+    var _ref = matchingConfig || {},
+        urlMatcher = _ref.urlMatcher,
+        headersMatcher = _ref.headersMatcher,
+        methodMatcher = _ref.methodMatcher,
+        bodyMatcher = _ref.bodyMatcher,
+        headersToOmit = _ref.headersToOmit;
+
     var configHeaders = JSON.stringify((0, _lodash2.default)(config.headers, headersToOmit));
     var requestHeaders = JSON.stringify((0, _lodash2.default)(request.headers, headersToOmit));
 
-    var urlMatches = (0, _stringSimilarity2.default)((0, _removeURLPrefix2.default)(request.url), (0, _removeURLPrefix2.default)(url));
-    var bodyMatches = config ? (0, _stringSimilarity2.default)(request.content, config.body) : true;
-    var headersMatch = config ? (0, _stringSimilarity2.default)(requestHeaders, configHeaders) : true;
-    var methodMatches = config ? config.method === request.method : true;
+    var urlMatches = true;
+    if (urlMatcher) {
+      urlMatches = urlMatcher(request.url, url);
+    } else {
+      urlMatches = (0, _stringSimilarity2.default)((0, _removeURLPrefix2.default)(request.url), (0, _removeURLPrefix2.default)(url));
+    }
+
+    var bodyMatches = true;
+    if (bodyMatcher && config) {
+      bodyMatches = bodyMatcher(request.content, config.body);
+    } else if (config) {
+      bodyMatches = (0, _stringSimilarity2.default)(request.content, config.body);
+    }
+
+    var headersMatch = true;
+
+    if (headersMatcher && config) {
+      headersMatch = headersMatcher(requestHeaders, configHeaders);
+    } else if (config) {
+      headersMatch = (0, _stringSimilarity2.default)(requestHeaders, configHeaders);
+    }
+
+    var methodMatches = true;
+    if (methodMatcher && config) {
+      methodMatches = methodMatcher(config.method, request.method);
+    } else if (config) {
+      methodMatches = config.method === request.method;
+    }
 
     var everythingMatches = urlMatches && methodMatches && bodyMatches && headersMatch;
 
@@ -100,9 +130,9 @@ exports.default = function (profileRequests, config) {
   var defaultedConfig = _extends({}, DEFAULT_CONFIG, config);
   var repeatMap = (0, _requestRepeatMapBuilder2.default)(profileRequests);
 
-  profileRequests.forEach(function (_ref) {
-    var request = _ref.request,
-        response = _ref.response;
+  profileRequests.forEach(function (_ref2) {
+    var request = _ref2.request,
+        response = _ref2.response;
 
     var requestRepeatMap = repeatMap[(0, _requestIdBuilder2.default)(request)];
     requestRepeatMap.invocations += 1;

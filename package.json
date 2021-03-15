@@ -15,7 +15,8 @@
   "scripts": {
     "lint": "eslint .",
     "test": "jest && codecov",
-    "validate": "npm run lint && npm run test"
+    "validate": "npm run lint && npm run test",
+    "build": "babel ./index.js ./src/*.js --out-dir ./dist --source-maps --copy-files"
   },
   "repository": {
     "type": "git",

@@ -56,5 +56,17 @@ describe('stringSimilarity', function () {
   it('should not match if the source and target are undefined and null', function () {
     expect((0, _stringSimilarity2.default)(null, 'something')).toBe(false);
   });
+
+  it('should match a target with asterisks against a wildcarded source', function () {
+    expect((0, _stringSimilarity2.default)('Some ' + WILDCARD + ' with asterisks ***', 'Some text with asterisks ***')).toBe(true);
+  });
+
+  it('should not match target with asterisk within a char group against a wildcarded source without asterisk', function () {
+    expect((0, _stringSimilarity2.default)('This ' + WILDCARD + ' a t*', 'This is a test')).toBe(false);
+  });
+
+  it('should match a target against a source that wildcards the asterisks within the target', function () {
+    expect((0, _stringSimilarity2.default)('These are asterisks: ' + WILDCARD, 'These are asterisks: ***')).toBe(true);
+  });
 });
 //# sourceMappingURL=stringSimilarity.test.js.map
