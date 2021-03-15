@@ -24,11 +24,18 @@ const buildResponseOptions = response => ({
 
 export const matchingFunction = (matchingConfig, request, response) => (_url, _config) => {
   const { url, config } = extractFetchArguments([_url, _config]);
-  const headersToOmit = matchingConfig ? matchingConfig.headersToOmit : null;
+  const { urlMatcher, headersToOmit } = matchingConfig || {};
+
   const configHeaders = JSON.stringify(omit(config.headers, headersToOmit));
   const requestHeaders = JSON.stringify(omit(request.headers, headersToOmit));
 
-  const urlMatches = stringIsSimilarTo(removeURLPrefix(request.url), removeURLPrefix(url));
+  let urlMatches = false;
+  if (urlMatcher) {
+    urlMatches = urlMatcher(request.url, url);
+  } else {
+    urlMatches = stringIsSimilarTo(removeURLPrefix(request.url), removeURLPrefix(url));
+  }
+
   const bodyMatches = config ? stringIsSimilarTo(request.content, config.body) : true;
   const headersMatch = config ? stringIsSimilarTo(requestHeaders, configHeaders) : true;
   const methodMatches = config ? config.method === request.method : true;
