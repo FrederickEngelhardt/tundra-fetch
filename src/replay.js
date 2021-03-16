@@ -10,7 +10,6 @@ import extractFetchArguments from './fetchArgumentExtractor';
 import buildRequest from './requestBuilder';
 import submitRequestData from './submitRequest';
 
-
 const DEFAULT_CONFIG = {
   debuggingEnabled: true,
   debugPort: 9091,
@@ -32,34 +31,40 @@ export const matchingFunction = (matchingConfig, request, response) => (_url, _c
   const requestHeaders = JSON.stringify(omit(request.headers, headersToOmit));
 
   let urlMatches = true;
+  const defaultUrlMatcher = () => stringIsSimilarTo(removeURLPrefix(request.url), removeURLPrefix(url));
+
   if (urlMatcher) {
-    urlMatches = urlMatcher(request.url, url);
+    urlMatches = urlMatcher(removeURLPrefix(request.url), removeURLPrefix(url), defaultUrlMatcher);
   } else {
     urlMatches = stringIsSimilarTo(removeURLPrefix(request.url), removeURLPrefix(url));
   }
 
   let bodyMatches = true;
+  const defaultBodyMatcher = () => stringIsSimilarTo(request.content, config.body);
+
   if (bodyMatcher && config) {
-    bodyMatches = bodyMatcher(request.content, config.body);
+    bodyMatches = bodyMatcher(request.content, config.body, defaultBodyMatcher);
   } else if (config) {
-    bodyMatches = stringIsSimilarTo(request.content, config.body);
+    bodyMatches = defaultBodyMatcher();
   }
 
   let headersMatch = true;
+  const defaultHeadersMatcher = () => stringIsSimilarTo(requestHeaders, configHeaders);
 
   if (headersMatcher && config) {
-    headersMatch = headersMatcher(requestHeaders, configHeaders);
+    headersMatch = headersMatcher(requestHeaders, configHeaders, defaultHeadersMatcher);
   } else if (config) {
-    headersMatch = stringIsSimilarTo(requestHeaders, configHeaders);
+    headersMatch = defaultHeadersMatcher();
   }
 
   let methodMatches = true;
-  if (methodMatcher && config) {
-    methodMatches = methodMatcher(config.method, request.method);
-  } else if (config) {
-    methodMatches = config.method === request.method;
-  }
+  const defaultMethodMatcher = () => config.method === request.method;
 
+  if (methodMatcher && config) {
+    methodMatches = methodMatcher(config.method, request.method, defaultMethodMatcher);
+  } else if (config) {
+    methodMatches = defaultMethodMatcher();
+  }
 
   const everythingMatches = urlMatches && methodMatches && bodyMatches && headersMatch;
 
@@ -85,19 +90,21 @@ export default (profileRequests, config) => {
 
     const responseOptions = buildResponseOptions(response);
 
-    fetchMock.mock(
-      matchingFunction(defaultedConfig, request, response),
-      buildResponseOptions(response),
-      buildFetchMockConfig(request, defaultedConfig, repeatMap),
-    ).catch(async (...args) => {
-      if (defaultedConfig.debuggingEnabled) {
-        const { url, config: fetchConfig } = extractFetchArguments(args);
-        const builtRequest = buildRequest(url, fetchConfig, responseOptions, responseOptions.body);
+    fetchMock
+      .mock(
+        matchingFunction(defaultedConfig, request, response),
+        buildResponseOptions(response),
+        buildFetchMockConfig(request, defaultedConfig, repeatMap),
+      )
+      .catch(async (...args) => {
+        if (defaultedConfig.debuggingEnabled) {
+          const { url, config: fetchConfig } = extractFetchArguments(args);
+          const builtRequest = buildRequest(url, fetchConfig, responseOptions, responseOptions.body);
 
-        await submitRequestData(builtRequest, defaultedConfig.debugPort, false);
-      }
+          await submitRequestData(builtRequest, defaultedConfig.debugPort, false);
+        }
 
-      console.error('Unable to match request');
-    });
+        console.error('Unable to match request');
+      });
   });
 };

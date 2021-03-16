@@ -83,32 +83,47 @@ var matchingFunction = exports.matchingFunction = function matchingFunction(matc
     var requestHeaders = JSON.stringify((0, _lodash2.default)(request.headers, headersToOmit));
 
     var urlMatches = true;
+    var defaultUrlMatcher = function defaultUrlMatcher() {
+      return (0, _stringSimilarity2.default)((0, _removeURLPrefix2.default)(request.url), (0, _removeURLPrefix2.default)(url));
+    };
+
     if (urlMatcher) {
-      urlMatches = urlMatcher(request.url, url);
+      urlMatches = urlMatcher((0, _removeURLPrefix2.default)(request.url), (0, _removeURLPrefix2.default)(url), defaultUrlMatcher);
     } else {
       urlMatches = (0, _stringSimilarity2.default)((0, _removeURLPrefix2.default)(request.url), (0, _removeURLPrefix2.default)(url));
     }
 
     var bodyMatches = true;
+    var defaultBodyMatcher = function defaultBodyMatcher() {
+      return (0, _stringSimilarity2.default)(request.content, config.body);
+    };
+
     if (bodyMatcher && config) {
-      bodyMatches = bodyMatcher(request.content, config.body);
+      bodyMatches = bodyMatcher(request.content, config.body, defaultBodyMatcher);
     } else if (config) {
-      bodyMatches = (0, _stringSimilarity2.default)(request.content, config.body);
+      bodyMatches = defaultBodyMatcher();
     }
 
     var headersMatch = true;
+    var defaultHeadersMatcher = function defaultHeadersMatcher() {
+      return (0, _stringSimilarity2.default)(requestHeaders, configHeaders);
+    };
 
     if (headersMatcher && config) {
-      headersMatch = headersMatcher(requestHeaders, configHeaders);
+      headersMatch = headersMatcher(requestHeaders, configHeaders, defaultHeadersMatcher);
     } else if (config) {
-      headersMatch = (0, _stringSimilarity2.default)(requestHeaders, configHeaders);
+      headersMatch = defaultHeadersMatcher();
     }
 
     var methodMatches = true;
+    var defaultMethodMatcher = function defaultMethodMatcher() {
+      return config.method === request.method;
+    };
+
     if (methodMatcher && config) {
-      methodMatches = methodMatcher(config.method, request.method);
+      methodMatches = methodMatcher(config.method, request.method, defaultMethodMatcher);
     } else if (config) {
-      methodMatches = config.method === request.method;
+      methodMatches = defaultMethodMatcher();
     }
 
     var everythingMatches = urlMatches && methodMatches && bodyMatches && headersMatch;
